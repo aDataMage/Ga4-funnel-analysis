@@ -1,0 +1,34 @@
+models:
+
+  - name: dim_date
+    description: >
+      One row per calendar day from ga4_start_date to ga4_end_date
+      (2020-11-01 to 2021-01-31 by default). Join to fct_events.event_date and
+      fct_sessions.session_date. Also the semantic layer's time spine (day grain).
+    time_spine:
+      standard_granularity_column: date_day
+    columns:
+      - name: date_day
+        description: The calendar day. Primary key.
+        granularity: day
+        data_tests:
+          - unique
+          - not_null
+      - name: year
+        description: Calendar year.
+      - name: quarter
+        description: Calendar quarter, 1-4.
+      - name: year_month
+        description: Year and month as 'YYYY-MM' - sorts correctly as text.
+      - name: month_name
+        description: Month name, e.g. November. Sort by month_sort.
+      - name: month_sort
+        description: Month number, 1-12 - sort key for month_name.
+      - name: iso_week
+        description: ISO week number (weeks start Monday).
+      - name: day_name
+        description: Day name, e.g. Monday. Sort by day_sort.
+      - name: day_sort
+        description: Day of week, Monday = 1 to Sunday = 7 - sort key for day_name.
+      - name: is_weekend
+        description: 1 on Saturday and Sunday, else 0.

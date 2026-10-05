@@ -1,0 +1,38 @@
+models:
+
+  - name: rpt_funnel_weekly
+    description: >
+      The dashboard's trend table (page 3): one row per ISO week (Monday start),
+      with funnel step counts and the session conversion rate with its 95%
+      Wilson interval. Base: 30-minute sessions by session_date. The first
+      week holds one day (the sample starts Sunday 2020-11-01) - is_partial_week.
+    columns:
+      - name: week_start
+        description: Monday of the ISO week.
+        data_tests:
+          - unique
+          - not_null
+      - name: week_label
+        description: Week start as 'DD Mon', for axis labels. Sort by week_sort.
+      - name: week_sort
+        description: Week order, 1 to 14.
+      - name: days_in_week
+        description: Days of data in the week.
+      - name: is_partial_week
+        description: 1 where the week has fewer than 7 days of data.
+      - name: sessions
+        description: Sessions in the week.
+      - name: sessions_with_view_item
+        description: Sessions containing a view_item event.
+      - name: sessions_with_add_to_cart
+        description: Sessions containing an add_to_cart event.
+      - name: sessions_with_begin_checkout
+        description: Sessions containing a begin_checkout event.
+      - name: sessions_with_purchase
+        description: Sessions containing a purchase event.
+      - name: session_conversion_rate
+        description: sessions_with_purchase / sessions.
+      - name: session_conversion_rate_lower
+        description: Wilson 95% lower bound of session_conversion_rate.
+      - name: session_conversion_rate_upper
+        description: Wilson 95% upper bound of session_conversion_rate.

@@ -1,0 +1,51 @@
+models:
+
+  - name: rpt_product_funnel
+    description: >
+      The dashboard's product funnel (page 3): one row per product category.
+      Products are linked across view, cart and purchase events by item_name
+      (category labels and item_ids don't match between view and purchase
+      events), and each product takes the category it most often carries on
+      view events. Unnamed items ('(not set)') are left out.
+      Base: sessions that viewed at least one item of the category. Rates are
+      the share of those sessions that also carted / bought an item of the
+      same category, with 95% Wilson intervals. Revenue and units count all
+      purchase events of the category. Thin categories (< 100 viewing
+      sessions) are flagged.
+    columns:
+      - name: item_category
+        description: >
+          The product's most frequent category on view_item events (view /
+          cart taxonomy, e.g. 'home/apparel/hats/'); 'unknown' for products
+          never viewed with a category.
+        data_tests:
+          - unique
+          - not_null
+      - name: category_sort
+        description: Order by viewing sessions, largest first; 'unknown' last (999).
+      - name: sessions_viewed
+        description: Sessions that viewed an item of the category - the base of both rates.
+      - name: sessions_viewed_and_carted
+        description: Viewing sessions that also added an item of the category to cart.
+      - name: sessions_viewed_and_purchased
+        description: Viewing sessions that also bought an item of the category.
+      - name: sessions_purchased
+        description: Sessions that bought an item of the category, whether or not they viewed one.
+      - name: units_purchased
+        description: Units of the category bought (purchase events).
+      - name: item_revenue_in_usd
+        description: Item revenue in USD from the category's purchase events.
+      - name: view_to_cart_rate
+        description: sessions_viewed_and_carted / sessions_viewed.
+      - name: view_to_cart_rate_lower
+        description: Wilson 95% lower bound of view_to_cart_rate.
+      - name: view_to_cart_rate_upper
+        description: Wilson 95% upper bound of view_to_cart_rate.
+      - name: view_to_purchase_rate
+        description: sessions_viewed_and_purchased / sessions_viewed.
+      - name: view_to_purchase_rate_lower
+        description: Wilson 95% lower bound of view_to_purchase_rate.
+      - name: view_to_purchase_rate_upper
+        description: Wilson 95% upper bound of view_to_purchase_rate.
+      - name: is_thin_cell
+        description: 1 where fewer than 100 sessions viewed the category.

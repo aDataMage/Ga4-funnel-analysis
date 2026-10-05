@@ -1,0 +1,13 @@
+# Copy this block into ~/.dbt/profiles.yml (never commit real credentials).
+# The top-level key must match `profile:` in dbt_project.yml.
+ga4_ecommerce:
+  target: dev
+  outputs:
+    dev:
+      type: bigquery
+      method: service-account
+      project: your-gcp-project-id          # TODO
+      dataset: dbt_dev                      # where dbt builds your models
+      keyfile: /path/to/service-account.json  # TODO
+      location: US
+      threads: 8

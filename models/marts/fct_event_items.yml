@@ -1,0 +1,64 @@
+models:
+
+  - name: fct_event_items
+    description: >
+      One row per item per event - GA4's items array unnested (3,982,732 rows
+      from 512,346 events). Most rows are product impressions: view_item
+      events alone carry ~2.7M. Filter on event_name (e.g. purchase,
+      add_to_cart) for the step you need. Strings are lower-cased;
+      '(not set)', '' and 'not available in demo dataset' are NULL.
+    columns:
+      - name: event_item_id
+        description: Primary key - hash of event_id and item_index.
+        data_tests:
+          - unique
+          - not_null
+      - name: event_id
+        description: Foreign key to fct_events.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('fct_events')
+                field: event_id
+      - name: event_date
+        description: Date of the event (property time zone). Foreign key to dim_date.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_day
+      - name: event_name
+        description: The event the item was on - view_item, add_to_cart, purchase, etc.
+      - name: item_index
+        description: Position of the item in the event's items array, from 0.
+        data_tests:
+          - not_null
+      - name: item_id
+        description: Product SKU; NULL where '(not set)' (~3% of rows).
+      - name: item_name
+        description: Product name; NULL where '(not set)'.
+      - name: item_brand
+        description: Product brand; NULL on ~93% of rows ('(not set)' or empty).
+      - name: item_variant
+        description: Product variant, e.g. size or colour; NULL on ~96% of rows.
+      - name: item_category
+        description: Top-level product category; NULL where '(not set)'.
+      - name: item_list_id
+        description: Id of the product list the item was shown in; NULL on ~98% of rows.
+      - name: item_list_index
+        description: Position of the item in its list, as text; NULL where '(not set)'.
+      - name: promotion_name
+        description: Promotion the item was shown in; NULL on ~95% of rows.
+      - name: creative_name
+        description: Promotion creative, e.g. front page carousel; NULL where '(not set)'.
+      - name: price
+        description: Item unit price, local currency. Populated on ~96% of rows.
+      - name: price_in_usd
+        description: Item unit price in USD. Populated on only ~0.4% of rows (15,555) - use price for coverage.
+      - name: quantity
+        description: Units of the item. Populated on ~4% of rows (cart and purchase steps).
+      - name: item_revenue
+        description: Revenue from the item, local currency. Populated on 15,555 rows (purchases).
+      - name: item_revenue_in_usd
+        description: Revenue from the item in USD. Populated on 15,555 rows (purchases).

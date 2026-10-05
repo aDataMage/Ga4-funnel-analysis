@@ -1,0 +1,75 @@
+models:
+
+  - name: rpt_funnel
+    description: >
+      The dashboard's funnel table (pages 1-2): one row per segment x funnel
+      step, with counts, rates and 95% intervals. Base: 30-minute sessions;
+      a session reaches a step if it contains the event at all (presence, not
+      sequence). Steps: sessions, view_item, add_to_cart, begin_checkout,
+      add_shipping_info, add_payment_info, purchase. Segments: overall,
+      device_category, continent, channel. Association only - a segment's gap
+      says where sessions convert less, not why.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: ['segment_type', 'segment_value', 'step']
+    columns:
+      - name: segment_type
+        description: overall, device_category, continent or channel.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['overall', 'device_category', 'continent', 'channel']
+      - name: segment_type_sort
+        description: Sort key for segment_type - overall 1, device_category 2, continent 3, channel 4.
+      - name: segment_value
+        description: >
+          The segment - 'all sessions' for overall; device category, continent,
+          or channel. Channel is the session's first-event medium, 'direct'
+          where the source is direct, 'unknown' where the medium is otherwise
+          NULL ('(data deleted)'). NULL device or continent shows as 'unknown'.
+      - name: segment_sort
+        description: Sort key within segment_type - largest segment first, 'unknown' last (99), overall 0.
+      - name: step
+        description: The funnel step.
+      - name: step_sort
+        description: Funnel order, 1 (sessions) to 7 (purchase).
+      - name: segment_sessions
+        description: Sessions in the segment - the base of reach_rate.
+      - name: sessions_reached
+        description: Sessions in the segment containing the step's event.
+      - name: prev_step_sessions
+        description: Sessions in the segment that reached the previous step - the base of step_conversion.
+      - name: reached_from_prev
+        description: Sessions that reached both the previous step and this one.
+      - name: reach_rate
+        description: sessions_reached / segment_sessions.
+      - name: reach_rate_lower
+        description: Wilson 95% lower bound of reach_rate.
+      - name: reach_rate_upper
+        description: Wilson 95% upper bound of reach_rate.
+      - name: step_conversion
+        description: >
+          reached_from_prev / prev_step_sessions - of the sessions that reached
+          the previous step, the share that also reached this one.
+      - name: step_conversion_lower
+        description: Wilson 95% lower bound of step_conversion.
+      - name: step_conversion_upper
+        description: Wilson 95% upper bound of step_conversion.
+      - name: skipped_prev_share
+        description: >
+          Share of sessions reaching this step that never reached the previous
+          one. High at begin_checkout and (vs add_to_cart) purchase - the
+          add_to_cart step doesn't nest; whether that's a buy-now path or
+          untracked cart events, the data can't tell.
+      - name: gap_vs_rest
+        description: The segment's reach_rate minus the reach rate of all other sessions. NULL for overall.
+      - name: gap_vs_rest_lower
+        description: Newcombe 95% lower bound of gap_vs_rest.
+      - name: gap_vs_rest_upper
+        description: Newcombe 95% upper bound of gap_vs_rest.
+      - name: is_thin_segment
+        description: 1 where the segment has fewer than 100 sessions - don't let it carry a claim without its interval.
+      - name: is_thin_step
+        description: 1 where fewer than 100 sessions reached the previous step - step_conversion is thin.

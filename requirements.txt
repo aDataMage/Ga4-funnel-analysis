@@ -1,0 +1,14 @@
+# dbt runs on the Fusion engine: a standalone binary, not a pip package.
+# Install it per docs.getdbt.com ("Install Fusion"), e.g.
+#   Windows (PowerShell):  irm https://public.cdn.getdbt.com/fs/install/install.ps1 | iex
+#   macOS / Linux:         curl -fsSL https://public.cdn.getdbt.com/fs/install/install.sh | sh -s -- --update
+#
+# Python is for ad-hoc profiling queries against BigQuery, and for checking the
+# confidence-interval macro against statsmodels. Pin versions with
+# `pip freeze > requirements.lock` once the environment works.
+
+google-cloud-bigquery
+db-dtypes
+pandas
+statsmodels
+python-dotenv

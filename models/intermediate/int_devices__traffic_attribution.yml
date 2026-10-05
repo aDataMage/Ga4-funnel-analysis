@@ -1,0 +1,29 @@
+models:
+
+  - name: int_devices__traffic_attribution
+    description: >
+      One row per device: its current traffic-source attribution, taken from
+      the device's latest event. The input to snap_device_traffic_attribution,
+      which records changes to it between runs (SCD Type 2).
+    columns:
+      - name: device_id
+        description: user_pseudo_id - the device.
+        data_tests:
+          - unique
+          - not_null
+      - name: traffic_source_key
+        description: Foreign key to dim_traffic_source - hash of medium, traffic_source and source_name.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_traffic_source')
+                field: traffic_source_key
+      - name: medium
+        description: Medium on the device's latest event. 'direct' where GA4 exported '(none)'; NULL where '(data deleted)'.
+      - name: traffic_source
+        description: Source on the device's latest event; NULL where '(data deleted)'.
+      - name: source_name
+        description: Campaign name on the device's latest event; NULL where '(data deleted)'.
+      - name: attributed_at
+        description: Timestamp of the device's latest event, which the attribution was read from.

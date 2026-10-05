@@ -1,0 +1,58 @@
+# SCD Type 2 history of each device's traffic-source attribution.
+#
+# Honest scope: the GA4 sample is static (2020-11-01 to 2021-01-31). A snapshot
+# records changes between *runs*, so on this data every device gets one version,
+# stamped with the run time. This demonstrates the Type 2 pattern - it doesn't
+# solve a live problem here. It would on a live GA4 export, where each run
+# sees newer events.
+#
+# Disabled: the project runs on the BigQuery sandbox, which blocks DML, and a
+# snapshot updates its table with MERGE. Set enabled: true here, in
+# int_devices__traffic_attribution and in dim_device_traffic_attribution once
+# the project has billing. Event-time SCD2 history that does build is in
+# dim_device_traffic_attribution_history.
+snapshots:
+
+  - name: snap_device_traffic_attribution
+    relation: ref('int_devices__traffic_attribution')
+    description: >
+      SCD Type 2 snapshot of int_devices__traffic_attribution (check strategy on
+      traffic_source_key). One row per device per attribution version.
+      Demonstrates the pattern: the sample is static, so each device has a
+      single version dated at the first snapshot run.
+    config:
+      enabled: false
+      unique_key: device_id
+      strategy: check
+      check_cols: ['traffic_source_key']
+      snapshot_meta_column_names:
+        dbt_valid_from: valid_from
+        dbt_valid_to: valid_to
+        dbt_scd_id: attribution_version_key
+        dbt_updated_at: snapshot_updated_at
+    columns:
+      - name: attribution_version_key
+        description: Surrogate key per version (dbt_scd_id, renamed).
+        data_tests:
+          - unique
+          - not_null
+      - name: device_id
+        description: user_pseudo_id - the device.
+        data_tests:
+          - not_null
+      - name: traffic_source_key
+        description: Foreign key to dim_traffic_source. A change in it opens a new version.
+      - name: medium
+        description: Medium in this version.
+      - name: traffic_source
+        description: Source in this version.
+      - name: source_name
+        description: Campaign name in this version.
+      - name: attributed_at
+        description: Timestamp of the device's latest event when the version was captured.
+      - name: valid_from
+        description: When this version was captured (snapshot run time, not event time).
+      - name: valid_to
+        description: When a later run replaced this version; NULL while current.
+      - name: snapshot_updated_at
+        description: dbt_updated_at, renamed - the run time the check strategy recorded.

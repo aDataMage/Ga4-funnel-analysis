@@ -1,0 +1,103 @@
+models:
+
+  - name: fct_events
+    description: >
+      One row per GA4 event, with foreign keys to its session, device, traffic
+      source and date. Descriptive device, location and traffic-source columns
+      live in the dimensions. Items are in fct_event_items. Also the
+      `fct_events` semantic model: event metrics can be sliced by the event's
+      own traffic source, its session and its device.
+    semantic_model:
+      enabled: true
+    agg_time_dimension: event_date
+    columns:
+      - name: event_id
+        description: >
+          Primary key - hash of device_id, ga_session_id, time_stamp and
+          event_name, which are unique together across all 4,295,584 events.
+        entity:
+          type: primary
+          name: event
+        data_tests:
+          - unique
+          - not_null
+      - name: session_id
+        description: Foreign key to fct_sessions - the 30-minute session the event belongs to.
+        entity:
+          type: foreign
+          name: session
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('fct_sessions')
+                field: session_id
+      - name: ga_session_id
+        description: GA4's own ga_session_id on the event.
+      - name: device_id
+        description: Foreign key to dim_devices.
+        entity:
+          type: foreign
+          name: device
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_devices')
+                field: device_id
+      - name: traffic_source_key
+        description: >
+          Foreign key to dim_traffic_source - the source / medium / campaign on
+          this event. It can differ from the device's current attribution in
+          dim_device_traffic_attribution.
+        entity:
+          type: foreign
+          name: traffic_source
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_traffic_source')
+                field: traffic_source_key
+      - name: event_date
+        description: Date of the event (property time zone). Foreign key to dim_date.
+        granularity: day
+        dimension:
+          type: time
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_day
+      - name: time_stamp
+        description: When the event was logged (UTC).
+      - name: event_name
+        description: GA4 event name, e.g. page_view, add_to_cart, purchase.
+        dimension:
+          type: categorical
+      - name: page_title
+        description: Title of the page the event fired on.
+      - name: page_location
+        description: Full URL of the page, lower-cased.
+      - name: transaction_id
+        description: Ecommerce transaction id; NULL where GA4 exported '(not set)'.
+      - name: purchase_revenue
+        description: Purchase revenue in local currency; NULL on non-purchase events.
+      - name: purchase_revenue_in_usd
+        description: Purchase revenue in USD.
+      - name: tax_value
+        description: Tax on the purchase, local currency.
+      - name: tax_value_in_usd
+        description: Tax on the purchase, USD.
+      - name: total_item_quantity
+        description: Total units across the event's items.
+      - name: unique_items
+        description: Number of distinct items in the event.
+    metrics:
+      - name: events
+        label: Events
+        description: Number of GA4 events, dated by event_date.
+        type: simple
+        agg: count
+        expr: event_id

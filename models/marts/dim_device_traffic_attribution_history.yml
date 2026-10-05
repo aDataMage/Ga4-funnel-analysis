@@ -1,0 +1,55 @@
+models:
+
+  - name: dim_device_traffic_attribution_history
+    description: >
+      SCD Type 2 history of each device's traffic-source attribution, derived
+      from the events: one row per device per version, where a version is a run
+      of consecutive events with the same source / medium / campaign.
+      valid_from / valid_to are event times. 345,700 versions for 270,154
+      devices; 42,263 devices change at least once, one of them 35 times.
+      GA4 documents these fields as first-touch, which shouldn't change, so
+      the changes may be an artefact of the sample's obfuscation - this shows
+      what the data holds, not a verified account of how devices were acquired.
+      Join on device_id and event time between valid_from and valid_to
+      (valid_to exclusive).
+    columns:
+      - name: attribution_version_key
+        description: Surrogate key per version - hash of device_id and version_num.
+        data_tests:
+          - unique
+          - not_null
+      - name: device_id
+        description: user_pseudo_id - the device. Unique among current versions.
+        data_tests:
+          - not_null
+          - unique:
+              config:
+                where: "is_current = 1"
+      - name: version_num
+        description: The device's version number, from 1 in time order.
+      - name: traffic_source_key
+        description: Foreign key to dim_traffic_source.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_traffic_source')
+                field: traffic_source_key
+      - name: medium
+        description: Medium in this version. 'direct' where GA4 exported '(none)'; NULL where '(data deleted)'.
+      - name: traffic_source
+        description: Source in this version; NULL where '(data deleted)'.
+      - name: source_name
+        description: Campaign name in this version; NULL where '(data deleted)'.
+      - name: valid_from
+        description: Timestamp of the version's first event (UTC).
+        data_tests:
+          - not_null
+      - name: valid_to
+        description: Timestamp of the next version's first event (UTC); NULL on the current version. Exclusive.
+      - name: is_current
+        description: 1 on the device's latest version, else 0.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [0, 1]
+                quote: false

@@ -1,0 +1,32 @@
+# dbt Fusion engine (dbt 2.x). The project name appears in three places below
+# (name, profile, models key) and must match the key in ~/.dbt/profiles.yml.
+name: ga4_ecommerce
+version: "1.0.0"
+profile: ga4_ecommerce
+
+model-paths: ["models"]
+test-paths: ["tests"]
+snapshot-paths: ["snapshots"]
+macro-paths: ["macros"]
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+vars:
+  # GA4 daily shards (events_YYYYMMDD) that stg_ga4__events reads. Defaults
+  # cover the whole sample. stg_ga4__events is rebuilt in full, so overriding
+  # these on the CLI replaces the table with just that window.
+  ga4_start_date: "20201101"
+  ga4_end_date: "20210131"
+
+models:
+  ga4_ecommerce:
+    # Fusion compiles every model against the warehouse schema: type errors,
+    # missing columns and bad functions fail at compile time, not at run time
+    +static_analysis: strict
+    staging:
+      +materialized: view      # one per source table: rename, type, lower-case
+    intermediate:
+      +materialized: view      # reusable joins and derivations, if marts get heavy
+    marts:
+      +materialized: table     # what BI tools read: fct_ / dim_ / rpt_

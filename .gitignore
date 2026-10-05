@@ -1,0 +1,35 @@
+# dbt
+target/
+dbt_packages/
+dbt_internal_packages/
+logs/
+.user.yml
+
+# credentials - the service-account key lives outside the repo; never commit one
+.env
+*.json.key
+service-account*.json
+*credentials*.json
+*-key.json
+
+# python
+.venv/
+venv/
+__pycache__/
+
+# Office lock files (created while a workbook is open)
+~$*
+
+# local Quarto previews of README.md (GitHub Pages uses index.html instead)
+README.html
+README_files/
+
+# local tools and OS clutter
+.claude/
+*.log
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# kept local, not published
+portfolio assets/

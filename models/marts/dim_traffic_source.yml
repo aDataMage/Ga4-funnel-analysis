@@ -1,0 +1,35 @@
+models:
+
+  - name: dim_traffic_source
+    description: >
+      One row per source / medium / campaign combination found in the GA4
+      events (15 in the sample). These are GA4's traffic_source fields - the
+      channel GA4 recorded as acquiring the device. Also a dimension-only
+      semantic model, reached from fct_events (the event's source) and
+      fct_sessions (the session's first-event source) through the
+      traffic_source entity.
+    semantic_model:
+      enabled: true
+    columns:
+      - name: traffic_source_key
+        description: Surrogate key - hash of medium, traffic_source and source_name (NULLs included).
+        entity:
+          type: primary
+          name: traffic_source
+        data_tests:
+          - unique
+          - not_null
+      - name: medium
+        description: Medium, e.g. organic, referral, cpc, other. 'direct' where GA4 exported '(none)'; NULL where '(data deleted)'.
+        dimension:
+          type: categorical
+      - name: traffic_source
+        description: Source, e.g. google, direct, other. NULL where '(data deleted)'.
+        dimension:
+          type: categorical
+          name: source
+      - name: source_name
+        description: Campaign name, e.g. organic, direct, referral, other. NULL where '(data deleted)'.
+        dimension:
+          type: categorical
+          name: campaign

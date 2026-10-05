@@ -1,0 +1,20 @@
+# Declare each dashboard so the lineage graph shows exactly what feeds it.
+
+exposures:
+
+  - name: excel_workbook
+    label: Funnel dashboard (Excel, Power Query)
+    type: dashboard
+    maturity: medium
+    description: >
+      Three-page Excel funnel dashboard (reports/ga4_funnel_dashboard.xlsx, PDF
+      export alongside), loaded through Power Query over the BigQuery ODBC
+      driver: 1 the funnel, 2 where it leaks (segments), 3 over time and by
+      product. Its headline numbers are guarded by tests/assert_dashboard_parity.sql.
+      As built: docs/excel_dashboard_plan.md.
+    depends_on:
+      - ref('rpt_funnel')
+      - ref('rpt_funnel_weekly')
+      - ref('rpt_product_funnel')
+    owner:
+      email: adejorieniola@gmail.com

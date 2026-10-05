@@ -1,0 +1,48 @@
+models:
+
+  - name: dim_device_traffic_attribution
+    description: >
+      SCD Type 2 dimension: one row per device per traffic-source attribution
+      version, from snap_device_traffic_attribution. Join on device_id with
+      is_current = 1 for today's attribution, or on device_id with a timestamp
+      between valid_from and valid_to for the attribution at that time. The
+      GA4 sample is static, so this demonstrates the pattern: every device has
+      one version, dated at the first snapshot run - not a history of the
+      2020-21 events.
+    columns:
+      - name: attribution_version_key
+        description: Surrogate key per version.
+        data_tests:
+          - unique
+          - not_null
+      - name: device_id
+        description: user_pseudo_id - the device. Unique among current versions.
+        data_tests:
+          - not_null
+          - unique:
+              config:
+                where: "is_current = 1"
+      - name: traffic_source_key
+        description: Foreign key to dim_traffic_source.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_traffic_source')
+                field: traffic_source_key
+      - name: medium
+        description: Medium in this version. 'direct' where GA4 exported '(none)'; NULL where '(data deleted)'.
+      - name: traffic_source
+        description: Source in this version; NULL where '(data deleted)'.
+      - name: source_name
+        description: Campaign name in this version; NULL where '(data deleted)'.
+      - name: valid_from
+        description: When the version was captured - snapshot run time, not event time.
+      - name: valid_to
+        description: When a later snapshot run replaced the version; NULL while current.
+      - name: is_current
+        description: 1 for the device's current version, else 0 (integer, so SUM counts devices).
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [0, 1]
+                quote: false

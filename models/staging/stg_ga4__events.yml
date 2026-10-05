@@ -1,0 +1,97 @@
+models:
+
+  - name: stg_ga4__events
+    description: >
+      One row per GA4 event from the Google Merchandise Store obfuscated sample,
+      2020-11-01 to 2021-01-31. No surrogate key. An unpartitioned table,
+      rebuilt in full each run; the vars ga4_start_date / ga4_end_date
+      (YYYYMMDD) set the date range it holds. String columns are cleaned by ga4_clean_string:
+      lower-cased, '(not set)' / '(data deleted)' are NULL, '(none)' is 'direct',
+      and bracketed labels are unwrapped ('(direct)' -> 'direct', '<Other>' -> 'other').
+      ecommerce is flattened to columns; items is kept as the raw array (values
+      not cleaned) for downstream models to unnest.
+    columns:
+      - name: event_date
+        description: Date of the event (property time zone), parsed from the YYYYMMDD string.
+        data_tests:
+          - not_null
+      - name: time_stamp
+        description: When the event was logged, from event_timestamp (microseconds, UTC).
+        data_tests:
+          - not_null
+      - name: event_name
+        description: GA4 event name, e.g. page_view, add_to_cart, purchase.
+        data_tests:
+          - not_null
+      - name: device_id
+        description: >
+          user_pseudo_id - GA4's pseudonymous browser/device identifier. Identifies
+          a device, not a person; the dataset has no user_id.
+        data_tests:
+          - not_null
+      - name: page_title
+        description: event_param page_title - title of the page the event fired on. NULL on some events.
+      - name: page_location
+        description: event_param page_location - full URL of the page, lower-cased.
+      - name: session_id
+        description: >
+          event_param ga_session_id, cast to string. The session's start time in
+          seconds, so it is unique only within a device - identify a session by
+          device_id + session_id.
+        data_tests:
+          - not_null
+      - name: first_touch
+        description: When the device first visited the site (user_first_touch_timestamp). NULL on ~2% of events.
+      - name: device
+        description: Device category.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['desktop', 'mobile', 'tablet']
+      - name: brand
+        description: Device brand (mobile_brand_name); 'other' where the export grouped it as '<Other>'.
+      - name: continent
+        description: Continent from the IP address; NULL where GA4 exported '(not set)'.
+      - name: sub_continent
+        description: Sub-continent from the IP address; NULL where GA4 exported '(not set)'.
+      - name: country
+        description: Country from the IP address; NULL where GA4 exported '(not set)'.
+      - name: region
+        description: Region / state from the IP address; NULL where GA4 exported '(not set)'.
+      - name: city
+        description: City from the IP address. NULL where GA4 exported '(not set)' (~42% of events).
+      - name: medium
+        description: >
+          Medium of the channel that first acquired the device (first-touch, not
+          per session). 'direct' where GA4 exported '(none)' (direct traffic);
+          NULL where '(data deleted)'; 'other' where grouped as '<Other>'.
+      - name: traffic_source
+        description: >
+          Source that first acquired the device (first-touch). 'direct' and
+          'other' unwrapped from '(direct)' / '<Other>'; NULL where '(data deleted)'.
+      - name: source_name
+        description: >
+          Campaign name that first acquired the device (first-touch). 'organic',
+          'direct', 'referral', 'other' unwrapped from their brackets; NULL where
+          '(data deleted)'.
+      - name: transaction_id
+        description: >
+          ecommerce.transaction_id. NULL where GA4 exported '(not set)', which
+          leaves 4,786 events with an id.
+      - name: purchase_revenue
+        description: ecommerce.purchase_revenue - revenue of the purchase event, in local currency. NULL on non-purchase events.
+      - name: purchase_revenue_in_usd
+        description: ecommerce.purchase_revenue_in_usd - purchase revenue in USD. Populated on slightly more events (5,692) than purchase_revenue (5,242).
+      - name: tax_value
+        description: ecommerce.tax_value - tax on the purchase, in local currency.
+      - name: tax_value_in_usd
+        description: ecommerce.tax_value_in_usd - tax on the purchase, in USD.
+      - name: total_item_quantity
+        description: ecommerce.total_item_quantity - total units across the event's items.
+      - name: unique_items
+        description: ecommerce.unique_items - number of distinct items in the event.
+      - name: items
+        description: >
+          Raw GA4 items array (item_id, item_name, price, quantity, ...), one
+          element per product on the event. Empty on ~88% of events. Not cleaned
+          or lower-cased here - unnest and clean it downstream.

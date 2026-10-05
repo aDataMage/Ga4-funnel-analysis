@@ -1,0 +1,91 @@
+models:
+
+  - name: int_sessions__funnel_steps
+    description: >
+      One row per session (30-minute inactivity sessions from
+      int_events__sessionised), with a 0/1 flag for each GA4 ecommerce funnel
+      step: session_start, view_item, add_to_cart, begin_checkout,
+      add_shipping_info, add_payment_info, purchase. A flag is 1 if the session
+      contains the event at all - steps are not forced into order, so later
+      steps can be 1 while earlier ones are 0. Flags are integers: SUM counts
+      sessions reaching a step, AVG is the rate. Attribution is first touch:
+      the channel that first acquired the device.
+    columns:
+      - name: session_key
+        description: Surrogate key for the session - hash of device_id and session_num.
+        data_tests:
+          - unique
+          - not_null
+      - name: device_id
+        description: user_pseudo_id - the device the session belongs to.
+        data_tests:
+          - not_null
+      - name: session_num
+        description: The device's session number, from 1 in time order.
+        data_tests:
+          - not_null
+      - name: session_start
+        description: Timestamp of the session's first event (UTC).
+      - name: session_end
+        description: Timestamp of the session's last event (UTC).
+      - name: event_count
+        description: Number of events in the session.
+      - name: first_touch
+        description: When the device first visited the site (user_first_touch_timestamp), from the session's first event. NULL where GA4 didn't record it.
+      - name: first_touch_medium
+        description: >
+          Medium of the channel that first acquired the device (GA4 traffic_source.medium).
+          'direct' where GA4 exported '(none)'; NULL where '(data deleted)'.
+      - name: first_touch_source
+        description: Source that first acquired the device (GA4 traffic_source.source); NULL where '(data deleted)'.
+      - name: first_touch_source_name
+        description: Campaign name that first acquired the device (GA4 traffic_source.name); NULL where '(data deleted)'.
+      - name: reached_session_start
+        description: 1 if the session contains a GA4 session_start event. GA4's sessions and these 30-minute sessions are defined differently, so this isn't always 1.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [0, 1]
+                quote: false
+      - name: reached_view_item
+        description: 1 if the session viewed a product (view_item).
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [0, 1]
+                quote: false
+      - name: reached_add_to_cart
+        description: 1 if the session added to cart (add_to_cart).
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [0, 1]
+                quote: false
+      - name: reached_begin_checkout
+        description: 1 if the session began checkout (begin_checkout).
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [0, 1]
+                quote: false
+      - name: reached_add_shipping_info
+        description: 1 if the session added shipping info (add_shipping_info).
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [0, 1]
+                quote: false
+      - name: reached_add_payment_info
+        description: 1 if the session added payment info (add_payment_info).
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [0, 1]
+                quote: false
+      - name: reached_purchase
+        description: 1 if the session purchased (purchase).
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [0, 1]
+                quote: false

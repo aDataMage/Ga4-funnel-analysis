@@ -1,0 +1,264 @@
+models:
+
+  - name: fct_sessions
+    description: >
+      One row per session. A session is a device's run of events with no gap
+      over 30 minutes (int_events__sessionised) - not GA4's own session.
+      ga_session_id and ga_session_count link back to GA4's sessions. The
+      reached_* flags mark which GA4 ecommerce funnel steps the session
+      contains (presence, not sequence): SUM counts sessions, AVG is the rate.
+      Also the `fct_sessions` semantic model: every session metric counts these
+      30-minute sessions, dated by session_date.
+    semantic_model:
+      enabled: true
+    agg_time_dimension: session_date
+    derived_semantics:
+      dimensions:
+        - name: spans_multiple_ga_sessions
+          type: categorical
+          description: True where the session contains more than one GA4 ga_session_id (4,697 of 355,592).
+          expr: ga_session_count > 1
+    columns:
+      - name: session_id
+        description: Session surrogate key (session_key from int_events__sessionised) - hash of device_id and session number.
+        entity:
+          type: primary
+          name: session
+        data_tests:
+          - unique
+          - not_null
+      - name: ga_session_id
+        description: >
+          GA4's ga_session_id on the session's first event. Where the session
+          spans more than one GA4 id (ga_session_count > 1), the others aren't shown.
+        data_tests:
+          - not_null
+      - name: ga_session_count
+        description: Distinct GA4 ga_session_ids in the session. Above 1 on 4,697 of 355,592 sessions.
+      - name: session_date
+        description: event_date of the session's first event (property time zone). Joins dim_date.
+        granularity: day
+        dimension:
+          type: time
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_day
+      - name: session_start
+        description: Timestamp of the session's first event (UTC).
+      - name: session_end
+        description: Timestamp of the session's last event (UTC).
+      - name: event_count
+        description: Number of events in the session.
+      - name: device_id
+        description: Foreign key to dim_devices.
+        entity:
+          type: foreign
+          name: device
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_devices')
+                field: device_id
+      - name: traffic_source_key
+        description: >
+          Foreign key to dim_traffic_source - the source / medium / campaign on
+          the session's first event.
+        entity:
+          type: foreign
+          name: traffic_source
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_traffic_source')
+                field: traffic_source_key
+      - name: reached_session_start
+        description: 1 if the session contains a GA4 session_start event, else 0. Not always 1 - GA4's sessions and these 30-minute sessions differ.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [0, 1]
+                quote: false
+      - name: reached_view_item
+        description: 1 if the session viewed a product (view_item), else 0.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [0, 1]
+                quote: false
+      - name: reached_add_to_cart
+        description: 1 if the session added to cart (add_to_cart), else 0.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [0, 1]
+                quote: false
+      - name: reached_begin_checkout
+        description: 1 if the session began checkout (begin_checkout), else 0.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [0, 1]
+                quote: false
+      - name: reached_add_shipping_info
+        description: 1 if the session added shipping info (add_shipping_info), else 0.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [0, 1]
+                quote: false
+      - name: reached_add_payment_info
+        description: 1 if the session added payment info (add_payment_info), else 0.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [0, 1]
+                quote: false
+      - name: reached_purchase
+        description: 1 if the session purchased (purchase), else 0.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [0, 1]
+                quote: false
+    metrics:
+      # traffic and engagement
+      - name: sessions
+        label: Sessions
+        description: Number of 30-minute sessions.
+        type: simple
+        agg: count
+        expr: session_id
+      - name: devices
+        label: Devices
+        description: >
+          Distinct devices (GA4 user_pseudo_id) with a session - devices, not
+          people; the sample has no user_id.
+        type: simple
+        agg: count_distinct
+        expr: device_id
+      - name: session_events_total
+        label: Events in sessions
+        description: Events summed over sessions, on the session date.
+        type: simple
+        agg: sum
+        expr: event_count
+      - name: session_duration_min_total
+        label: Session minutes
+        description: Minutes from first to last event, summed over sessions. A one-event session counts as 0.
+        type: simple
+        agg: sum
+        expr: timestamp_diff(session_end, session_start, second) / 60.0
+      # funnel - sessions reaching each step (presence, not sequence)
+      - name: sessions_with_session_start
+        label: Sessions with session_start
+        description: Sessions containing a GA4 session_start event. Not every 30-minute session does.
+        type: simple
+        agg: sum
+        expr: reached_session_start
+      - name: sessions_with_view_item
+        label: Sessions viewing a product
+        description: Sessions containing a view_item event.
+        type: simple
+        agg: sum
+        expr: reached_view_item
+      - name: sessions_with_add_to_cart
+        label: Sessions adding to cart
+        description: Sessions containing an add_to_cart event.
+        type: simple
+        agg: sum
+        expr: reached_add_to_cart
+      - name: sessions_with_begin_checkout
+        label: Sessions beginning checkout
+        description: Sessions containing a begin_checkout event.
+        type: simple
+        agg: sum
+        expr: reached_begin_checkout
+      - name: sessions_with_add_shipping_info
+        label: Sessions adding shipping info
+        description: Sessions containing an add_shipping_info event.
+        type: simple
+        agg: sum
+        expr: reached_add_shipping_info
+      - name: sessions_with_add_payment_info
+        label: Sessions adding payment info
+        description: Sessions containing an add_payment_info event.
+        type: simple
+        agg: sum
+        expr: reached_add_payment_info
+      - name: sessions_with_purchase
+        label: Purchasing sessions
+        description: Sessions containing a purchase event.
+        type: simple
+        agg: sum
+        expr: reached_purchase
+
+# Ratio metrics are top-level in the latest spec. Base for all of them: every
+# 30-minute session - reach rates, so they don't multiply into a step-to-step funnel.
+metrics:
+
+  - name: events_per_session
+    label: Events per session
+    description: Events divided by sessions.
+    type: ratio
+    numerator: session_events_total
+    denominator: sessions
+
+  - name: avg_session_duration_min
+    label: Average session duration (min)
+    description: Mean minutes from a session's first to last event; one-event sessions count as 0.
+    type: ratio
+    numerator: session_duration_min_total
+    denominator: sessions
+
+  - name: session_start_rate
+    label: Session_start rate
+    description: Share of sessions containing a GA4 session_start event.
+    type: ratio
+    numerator: sessions_with_session_start
+    denominator: sessions
+
+  - name: view_item_rate
+    label: Product view rate
+    description: Share of sessions that viewed a product.
+    type: ratio
+    numerator: sessions_with_view_item
+    denominator: sessions
+
+  - name: add_to_cart_rate
+    label: Add-to-cart rate
+    description: Share of sessions that added to cart.
+    type: ratio
+    numerator: sessions_with_add_to_cart
+    denominator: sessions
+
+  - name: begin_checkout_rate
+    label: Checkout start rate
+    description: Share of sessions that began checkout.
+    type: ratio
+    numerator: sessions_with_begin_checkout
+    denominator: sessions
+
+  - name: add_shipping_info_rate
+    label: Shipping info rate
+    description: Share of sessions that added shipping info.
+    type: ratio
+    numerator: sessions_with_add_shipping_info
+    denominator: sessions
+
+  - name: add_payment_info_rate
+    label: Payment info rate
+    description: Share of sessions that added payment info.
+    type: ratio
+    numerator: sessions_with_add_payment_info
+    denominator: sessions
+
+  - name: session_conversion_rate
+    label: Session conversion rate
+    description: Share of sessions that purchased - purchasing sessions / sessions.
+    type: ratio
+    numerator: sessions_with_purchase
+    denominator: sessions

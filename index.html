@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GA4 Funnel dbt Project</title>
+<meta name="description" content="A dbt pipeline on BigQuery that turns 4.3M raw GA4 events into a tested funnel model, semantic layer and Excel dashboard.">
+<!--
+  GitHub Pages entry point. Renders README.md (or any repo Markdown file given
+  as ?doc=path/to/file.md) in the browser, so the README stays the single
+  source: ```mermaid blocks become diagrams (Mermaid), ```math blocks become
+  equations (KaTeX), and links to other .md files open in this same viewer.
+  Preview locally over http (fetch doesn't work from file://):
+    python -m http.server 8000   then open http://localhost:8000
+-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+<style>
+  /* The dashboard's palette, validated on #FAF7F2 (see CLAUDE.md). Light only:
+     the accent fails on a dark base (1.5 : 1). */
+  :root {
+    --bg: #FAF7F2;
+    --card: #FFFFFF;
+    --text: #1F1A14;
+    --muted: #56687D;
+    --accent: #4B3621;
+    --rule: #E2DACE;
+    --code-bg: #F2EDE5;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.65 "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  main {
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 40px 16px 64px;
+  }
+  nav.crumb { font-size: 14px; color: var(--muted); margin-bottom: 24px; }
+  nav.crumb a { color: var(--muted); }
+  h1, h2, h3, h4 {
+    font-family: Georgia, "Times New Roman", serif;
+    font-weight: 600;
+    line-height: 1.25;
+    margin: 1.8em 0 0.6em;
+  }
+  h1 { font-size: 2rem; margin-top: 0; }
+  h2 { font-size: 1.5rem; padding-bottom: 0.3em; border-bottom: 1px solid var(--rule); }
+  h3 { font-size: 1.2rem; }
+  p, ul, ol, table, pre, details { margin: 0 0 1em; }
+  a { color: var(--accent); text-underline-offset: 2px; }
+  a:hover { text-decoration-thickness: 2px; }
+  strong { font-weight: 600; }
+  hr { border: 0; border-top: 1px solid var(--rule); margin: 2.5em 0; }
+  img { max-width: 100%; height: auto; }
+  main > p > img, main p > img[width] {
+    display: block;
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    background: var(--card);
+  }
+  p > img[src*="shields.io"] { display: inline; border: 0; margin-right: 4px; }
+  table {
+    display: block;
+    overflow-x: auto;
+    border-collapse: collapse;
+    width: max-content;
+    max-width: 100%;
+    font-size: 15px;
+  }
+  th, td { border: 1px solid var(--rule); padding: 6px 12px; text-align: left; vertical-align: top; }
+  th { background: var(--card); font-weight: 600; }
+  tr:nth-child(even) td { background: rgba(255, 255, 255, 0.55); }
+  code {
+    font-family: Consolas, "Cascadia Mono", Menlo, monospace;
+    font-size: 0.9em;
+    background: var(--code-bg);
+    padding: 0.1em 0.35em;
+    border-radius: 3px;
+  }
+  pre {
+    background: var(--code-bg);
+    padding: 14px 16px;
+    border-radius: 4px;
+    overflow-x: auto;
+  }
+  pre code { background: none; padding: 0; }
+  pre.mermaid {
+    background: var(--card);
+    border: 1px solid var(--rule);
+    text-align: center;
+    overflow-x: auto;
+  }
+  .math-block {
+    background: var(--card);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    padding: 12px 16px;
+    margin: 0 0 1em;
+    overflow-x: auto;
+  }
+  details {
+    background: var(--card);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    padding: 10px 16px;
+  }
+  details > summary { cursor: pointer; }
+  details[open] > summary { margin-bottom: 0.8em; }
+  .status { color: var(--muted); }
+  footer { margin-top: 48px; font-size: 13px; color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <nav class="crumb" id="crumb" hidden><a href="./">← Project overview</a></nav>
+  <article id="content"><p class="status">Loading…</p></article>
+  <footer>Rendered from the repository's Markdown. Diagrams: Mermaid. Equations: KaTeX.</footer>
+</main>
+<script>
+(function () {
+  var params = new URLSearchParams(location.search);
+  var doc = params.get("doc") || "README.md";
+  // Only render Markdown files from this site: no absolute URLs, no parent paths.
+  if (!/\.md$/i.test(doc) || /^[a-z]+:|^\/\/|(^|\/)\.\.(\/|$)/i.test(doc)) doc = "README.md";
+  var docUrl = new URL(doc, location.href);
+  var content = document.getElementById("content");
+  if (doc !== "README.md") document.getElementById("crumb").hidden = false;
+
+  function escapeHtml(s) {
+    return s.replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  var renderer = new marked.Renderer();
+  renderer.code = function (code, lang) {
+    // marked 12 passes (code, infostring); newer versions pass a token object.
+    if (typeof code === "object") { lang = code.lang; code = code.text; }
+    lang = (lang || "").trim().split(/\s+/)[0];
+    if (lang === "mermaid") return '<pre class="mermaid">' + escapeHtml(code) + "</pre>";
+    if (lang === "math") {
+      return '<div class="math-block">' +
+        katex.renderToString(code, { displayMode: true, throwOnError: false }) + "</div>";
+    }
+    return "<pre><code>" + escapeHtml(code) + "</code></pre>";
+  };
+
+  function isRelative(href) {
+    return href && !/^([a-z]+:|#|\/\/|\?)/i.test(href);
+  }
+
+  // Resolve relative links and images against the rendered file's folder;
+  // links to other Markdown files open in this viewer.
+  function fixLinks(root) {
+    root.querySelectorAll("a[href]").forEach(function (a) {
+      var href = a.getAttribute("href");
+      if (!isRelative(href)) return;
+      var target = new URL(href, docUrl);
+      var path = decodeURIComponent(target.pathname.replace(new URL("./", location.href).pathname, ""));
+      if (/\.md$/i.test(path)) {
+        a.setAttribute("href", "?doc=" + encodeURIComponent(path) + target.hash);
+      } else {
+        a.setAttribute("href", target.href);
+      }
+    });
+    root.querySelectorAll("img[src]").forEach(function (img) {
+      var src = img.getAttribute("src");
+      if (isRelative(src)) img.setAttribute("src", new URL(src, docUrl).href);
+    });
+  }
+
+  mermaid.initialize({
+    startOnLoad: false,
+    theme: "base",
+    securityLevel: "strict",
+    flowchart: { useMaxWidth: false },
+    themeVariables: {
+      fontFamily: '"Segoe UI", system-ui, sans-serif',
+      primaryColor: "#FFFFFF",
+      primaryTextColor: "#1F1A14",
+      primaryBorderColor: "#56687D",
+      lineColor: "#56687D",
+      secondaryColor: "#FAF7F2",
+      tertiaryColor: "#FAF7F2"
+    }
+  });
+
+  fetch(docUrl.href)
+    .then(function (r) {
+      if (!r.ok) throw new Error(r.status + " " + r.statusText);
+      return r.text();
+    })
+    .then(function (md) {
+      content.innerHTML = marked.parse(md, { renderer: renderer, gfm: true });
+      fixLinks(content);
+      var h1 = content.querySelector("h1");
+      if (h1 && doc !== "README.md") document.title = h1.textContent + " · GA4 Funnel dbt Project";
+      return mermaid.run({ querySelector: "pre.mermaid" });
+    })
+    .catch(function (err) {
+      content.innerHTML = '<p class="status">Couldn\'t load <code>' + escapeHtml(doc) +
+        "</code> (" + escapeHtml(String(err.message || err)) + "). " +
+        "If you opened this file directly, serve the folder over http instead: " +
+        "<code>python -m http.server 8000</code>.</p>";
+    });
+})();
+</script>
+</body>
+</html>

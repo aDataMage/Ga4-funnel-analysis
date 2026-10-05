@@ -1,0 +1,18 @@
+# Declare raw tables here. `database` defaults to the target's project, so it
+# only needs setting if the raw data lives in another GCP project.
+
+sources:
+  - name: ga4
+    description: >
+      Google's obfuscated GA4 export for the Google Merchandise Store, published
+      as a BigQuery public dataset. Covers 2020-11-01 to 2021-01-31. Values are
+      obfuscated and some fields are placeholders (e.g. '<Other>', '(data deleted)').
+    database: bigquery-public-data
+    schema: ga4_obfuscated_sample_ecommerce
+    tables:
+      - name: events
+        identifier: events_*
+        description: >
+          One row per event, sharded into one table per day (events_YYYYMMDD).
+          Read through the wildcard and filter on _TABLE_SUFFIX to limit the
+          shards scanned. Nested fields: event_params, user_properties, items.

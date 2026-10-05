@@ -1,0 +1,38 @@
+models:
+
+  - name: int_events__sessionised
+    description: >
+      One row per event from stg_ga4__events, with the session it belongs to.
+      A session is a device's run of events with no gap longer than 30 minutes
+      (1,800 seconds). Sessions are numbered per device in time order and keyed
+      by session_key. GA4's own session_id is carried through but not used.
+      All stg_ga4__events columns pass through unchanged - see that model for
+      their descriptions.
+    columns:
+      - name: session_key
+        description: Surrogate key for the session - hash of device_id and session_num.
+        data_tests:
+          - not_null
+      - name: device_id
+        description: user_pseudo_id - the device the event came from. Sessions are built per device.
+        data_tests:
+          - not_null
+      - name: session_num
+        description: >
+          The device's session number, from 1 in time order. Increases by 1 each
+          time more than 30 minutes pass between the device's consecutive events.
+        data_tests:
+          - not_null
+      - name: is_new_session
+        description: 1 on the first event of a session, else 0. SUM counts sessions.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [0, 1]
+                quote: false
+      - name: mins_since_prev
+        description: >
+          Whole minutes since the device's previous event; NULL on the device's
+          first event. For reading only - the session cut-off is tested in
+          seconds (> 1,800), so a gap of 30m 30s shows 30 here yet starts a new session.

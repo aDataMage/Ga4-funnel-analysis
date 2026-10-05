@@ -1,0 +1,54 @@
+models:
+
+  - name: dim_devices
+    description: >
+      One row per device (GA4 user_pseudo_id), with its location and device
+      attributes. Type 1: where an attribute changed across a device's events
+      (device category for 4,182 devices, brand for 5,539), the latest event's
+      value is kept. Location never changes within a device in this sample.
+      Also a dimension-only semantic model: session and event metrics slice by
+      these through the device entity.
+    semantic_model:
+      enabled: true
+    columns:
+      - name: device_id
+        description: user_pseudo_id - GA4's pseudonymous browser/device identifier. Primary key.
+        entity:
+          type: primary
+          name: device
+        data_tests:
+          - unique
+          - not_null
+      - name: continent
+        description: Continent from the IP address; NULL where GA4 exported '(not set)'.
+        dimension:
+          type: categorical
+      - name: sub_continent
+        description: Sub-continent from the IP address; NULL where '(not set)'.
+        dimension:
+          type: categorical
+      - name: country
+        description: Country from the IP address; NULL where '(not set)'.
+        dimension:
+          type: categorical
+      - name: region
+        description: Region / state from the IP address; NULL where '(not set)'.
+        dimension:
+          type: categorical
+      - name: city
+        description: City from the IP address; NULL where '(not set)'.
+        dimension:
+          type: categorical
+      - name: device
+        description: Device category on the device's latest event.
+        dimension:
+          type: categorical
+          name: device_category
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['desktop', 'mobile', 'tablet']
+      - name: brand
+        description: Device brand on the device's latest event; 'other' where GA4 grouped it as '<Other>'.
+        dimension:
+          type: categorical

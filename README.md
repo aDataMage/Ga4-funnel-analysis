@@ -14,12 +14,10 @@ fixing before it could be trusted, and that's what this project is about.**
 
 ## At a glance
 
-| | |
-| --- | --- |
-| **The question** | Where do sessions drop out between landing and purchase, and for which devices, regions and channels? |
-| **What I found** | 1.36% of sessions purchase (95% CI 1.32–1.40%). The biggest loss is before the funnel starts: 78.5% never view a product. Referral sessions convert 0.39 pp above the rest; organic, cpc and "other" about 0.4 pp below. |
-| **What I built** | A layered dbt project on BigQuery (staging → intermediate → marts → reports), 13 models with 75 data tests, 3 custom macros, a semantic layer with 21 metrics, a parity test guarding the dashboard's numbers, and a three-page Excel dashboard over Power Query. |
-| **Data** | Google's public GA4 obfuscated sample (`bigquery-public-data.ga4_obfuscated_sample_ecommerce`): 4,295,584 events in 92 daily tables, 1 Nov 2020 – 31 Jan 2021, 270,154 devices. |
+- **The question:** where do sessions drop out between landing and purchase, and for which devices, regions and channels?
+- **What I found:** 1.36% of sessions purchase (95% CI 1.32–1.40%). The biggest loss is before the funnel starts: 78.5% never view a product. Referral sessions convert 0.39 pp above the rest; organic, cpc and "other" about 0.4 pp below.
+- **What I built:** a layered dbt project on BigQuery (staging → intermediate → marts → reports), 13 models with 75 data tests, 3 custom macros, a semantic layer with 21 metrics, a parity test guarding the dashboard's numbers, and a three-page Excel dashboard over Power Query.
+- **Data:** Google's public GA4 obfuscated sample (`bigquery-public-data.ga4_obfuscated_sample_ecommerce`): 4,295,584 events in 92 daily tables, 1 Nov 2020 – 31 Jan 2021, 270,154 devices.
 
 ## What this project shows about how I work with dbt
 
@@ -260,4 +258,4 @@ reports/          the Excel dashboard and its PDF export
 I'm **Adejori Eniola Emmanuel**, a data analyst who builds the pipeline as well
 as the analysis, and tests the numbers before anyone sees them.
 
-**[GitHub](https://github.com/aDataMage)**
+**[Live project site](https://adatamage.github.io/Ga4-funnel-analysis/)** · **[Repository](https://github.com/aDataMage/Ga4-funnel-analysis)** · **[GitHub profile](https://github.com/aDataMage)**
